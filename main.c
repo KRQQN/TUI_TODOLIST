@@ -8,29 +8,21 @@ typedef struct Task {
 
 void render_tasks(WINDOW *window, Task task[], int task_count, int highlighted);
 void handle_current_task_change(int *current_task, int task_count, char dir);
+int save_tasks(Task tasks[], int task_count);
+int load_tasks(Task tasks[], int *task_count);
 
 int main() {
-  int task_count = 3;
+  int task_count = 0;
   int scr_rows, scr_cols;
   int task_box_width = 50;
   int task_box_height = 20;
   int current_task = 0;
   bool is_running = true;
   char input_buffer[100];
+  char *menu_text = "[Q] quit [A] add [SPACE] toggle checkbox";
 
-  Task task1 = {
-    .text = "Create first task",
-    .completed = true
-  };
-  Task task2 = {
-    .text = "Create second task",
-    .completed = true
-  };
-  Task task3 = {
-    .text = "Create third task",
-    .completed = true
-  };
-  Task tasks[50] = { task1, task2, task3 };
+  Task tasks[50] = {0};
+  load_tasks(tasks, &task_count);
 
   initscr();
   nodelay(stdscr, TRUE);
@@ -65,12 +57,11 @@ int main() {
 
           tasks[task_count] = new_task;
           task_count++;
-
         }
 
         werase(add_task_win);
         wrefresh(add_task_win);
-
+        save_tasks(tasks,task_count);
         break;
       case 'j':
         handle_current_task_change(&current_task, task_count, 'j');
@@ -80,6 +71,7 @@ int main() {
         break;
       case ' ':
         tasks[current_task].completed = !tasks[current_task].completed;
+        save_tasks(tasks,task_count);
         break;
       case 'q':
         is_running = false;
@@ -88,7 +80,7 @@ int main() {
     
     render_tasks(win, tasks, task_count, current_task);
     wrefresh(win);
-    mvprintw((scr_rows -5), (scr_cols /2) -10 , "[Q] quit [A] add [SPACE] toggle checkbox ");
+    mvprintw((scr_rows -5), (scr_cols /2) - strlen(menu_text)/2 , menu_text);
 
     napms(100);
   }
@@ -131,5 +123,56 @@ void handle_current_task_change(int *current_task, int task_count, char dir) {
       (*current_task)--;
     }
   }
+}
+
+int save_tasks(Task tasks[], int task_count) {
+    FILE *fp = fopen("tasks.data", "wb");
+    if (!fp) {
+        mvprintw(0, 0, "Error: could not write to file");
+        return 0;
+    }
+
+    if (fwrite(&task_count, sizeof(int), 1, fp) != 1) {
+        fclose(fp);
+        return 0;
+    }
+
+    if (task_count > 0) {
+        if (fwrite(tasks, sizeof(Task), task_count, fp) != (size_t)task_count) {
+            fclose(fp);
+            return 0;
+        }
+    }
+
+    fclose(fp);
+    return 1;
+}
+
+int load_tasks(Task tasks[], int *task_count) {
+    FILE *fp = fopen("tasks.data", "rb");
+    if (!fp) {
+        mvprintw(0, 0, "Error: could not read from file");
+        *task_count = 0;
+        return 0;
+    }
+
+    if (fread(task_count, sizeof(int), 1, fp) != 1) {
+        fclose(fp);
+        *task_count = 0;
+        return 0;
+    }
+
+    if (*task_count < 0) {
+        *task_count = 0;
+        fclose(fp);
+        return 0;
+    }
+
+    if (fread(tasks, sizeof(Task), *task_count, fp) != (size_t)*task_count) {
+        *task_count = 0;
+    }
+
+    fclose(fp);
+    return 1;
 }
 
