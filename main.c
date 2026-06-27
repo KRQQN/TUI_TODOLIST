@@ -78,6 +78,9 @@ int main() {
       case 'k': 
         handle_current_task_change(&current_task, task_count, 'k');
         break;
+      case ' ':
+        tasks[current_task].completed = !tasks[current_task].completed;
+        break;
       case 'q':
         is_running = false;
         break;
@@ -85,7 +88,7 @@ int main() {
     
     render_tasks(win, tasks, task_count, current_task);
     wrefresh(win);
-    mvprintw((scr_rows -5), (scr_cols /2) -10 , "[Q]uit [A]dd task");
+    mvprintw((scr_rows -5), (scr_cols /2) -10 , "[Q] quit [A] add [SPACE] toggle checkbox ");
 
     napms(100);
   }
@@ -109,23 +112,24 @@ void render_tasks(WINDOW *window, Task tasks[], int task_count, int highlighted_
 
 void handle_current_task_change(int *current_task, int task_count, char dir) {
   
-      if (dir == 'j') {
-        if (*current_task < task_count) {
-          (*current_task)++;
-        }
+  if (dir == 'j') {
+    if (*current_task < task_count) {
+      (*current_task)++;
+    }
 
-        if (*current_task == task_count) {
-          (*current_task) = 0;
-        }
-      }
+    if (*current_task == task_count) {
+      (*current_task) = 0;
+    }
 
-      if (dir == 'k') {
-        if (*current_task == 0) {
-          (*current_task) = task_count;
-        }
+  } else if (dir == 'k') {
 
-        if (*current_task > 0) {
-          (*current_task)--;
-        }
-      }
+    if (*current_task == 0) {
+      (*current_task) = task_count;
+    }
+
+    if (*current_task > 0) {
+      (*current_task)--;
+    }
+  }
 }
+
