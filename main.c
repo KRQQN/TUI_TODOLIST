@@ -13,11 +13,14 @@ int load_tasks(Task tasks[], int *task_count);
 void delete_task(Task tasks[], int *task_count, int *current_task);
 void add_task(WINDOW *add_task_win, Task tasks[], int *task_count);
 
+#define TB_HEIGHT 20
+#define TB_WIDTH 50
+#define MAX_TASKS 50
+#define DATA_FILE "tasks.data"
+
 int main() {
     int task_count = 0;
     int scr_rows, scr_cols;
-    int task_box_width = 50;
-    int task_box_height = 20;
     int current_task = 0;
     bool is_running = true;
     char *menu_text = "[Q] quit [A] add [D] delete [SPACE] toggle checkbox";
@@ -33,19 +36,17 @@ int main() {
     start_color();
     init_pair(1, COLOR_BLACK, COLOR_WHITE);
 
-    int x_start = (scr_cols - task_box_width) / 2;
-    int y_start = (scr_rows - task_box_height) / 2;
+    int x_start = (scr_cols - TB_WIDTH) / 2;
+    int y_start = (scr_rows - TB_HEIGHT) / 2;
 
-    WINDOW *win = newwin(task_box_height, task_box_width, y_start, x_start);
-    WINDOW *add_task_win = NULL;
+    WINDOW *task_win = newwin(TB_HEIGHT, TB_WIDTH, y_start, x_start);
 
     while (is_running) {
 
         switch (getch()) {
 
             case 'a':
-                add_task_win = newwin(3, task_box_width, y_start + task_box_height, x_start);
-                add_task(add_task_win, tasks, &task_count);
+                add_task(task_win, tasks, &task_count);
                 save_tasks(tasks, task_count);
                 break;
             case 'd':
@@ -66,9 +67,11 @@ int main() {
                 break;
         }
 
-        render_tasks(win, tasks, task_count, current_task);
-        wrefresh(win);
+        render_tasks(task_win, tasks, task_count, current_task);
+        wrefresh(task_win);
+
         mvprintw((scr_rows - 5), (scr_cols / 2) - strlen(menu_text) / 2, menu_text);
+        refresh();
         napms(100);
     }
 
@@ -114,7 +117,7 @@ void handle_current_task_change(int *current_task, int task_count, char dir) {
 }
 
 int save_tasks(Task tasks[], int task_count) {
-    FILE *fp = fopen("tasks.data", "wb");
+    FILE *fp = fopen(DATA_FILE, "wb");
     if (!fp) {
         mvprintw(0, 0, "Error: could not write to file");
         return 0;
@@ -137,7 +140,7 @@ int save_tasks(Task tasks[], int task_count) {
 }
 
 int load_tasks(Task tasks[], int *task_count) {
-    FILE *fp = fopen("tasks.data", "rb");
+    FILE *fp = fopen(DATA_FILE, "rb");
     if (!fp) {
         mvprintw(0, 0, "Error: could not read from file");
         *task_count = 0;
@@ -164,29 +167,32 @@ int load_tasks(Task tasks[], int *task_count) {
     return 1;
 }
 
-void add_task(WINDOW *win, Task tasks[], int *task_count) {
-    Task new_task;
-    char input_buffer[100];
+void add_task(WINDOW *main_win, Task tasks[], int *task_count) {
+    if (*task_count >= MAX_TASKS) return;
 
-    box(win, 0, 0);
+    char input_buffer[100] = {0};
+    int start_y = getbegy(main_win) + getmaxy(main_win) + 1;
+    int start_x = getbegx(main_win) + 2;
+
+    WINDOW *input_win = newwin(3, TB_WIDTH - 4, start_y, start_x);
+    box(input_win, 0, 0);
+    mvwprintw(input_win, 1, 2, ": ");
 
     echo();
-    mvwprintw(win, 1, 2, ": ");
-    wgetnstr(win, input_buffer, 100);
+    keypad(input_win, TRUE);
+    wgetnstr(input_win, input_buffer, sizeof(input_buffer) - 1);
     noecho();
 
-    if (strlen(input_buffer) > 0 && *task_count < 50) {
-
-        strncpy(new_task.text, input_buffer, sizeof(new_task.text));
-        new_task.text[sizeof(new_task.text)] = '\0';
-        new_task.completed = false;
-
-        tasks[*task_count] = new_task;
+    if (strlen(input_buffer) > 0) {
+        Task t = {0};
+        strncpy(t.text, input_buffer, sizeof(t.text) - 1);
+        t.completed = false;
+        tasks[*task_count] = t;
         (*task_count)++;
     }
 
-    werase(win);
-    wrefresh(win);
+    delwin(input_win);
+    touchwin(main_win);
 }
 
 void delete_task(Task tasks[], int *task_count, int *current_task) {
