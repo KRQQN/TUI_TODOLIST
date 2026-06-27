@@ -26,11 +26,12 @@ int main() {
     load_tasks(tasks, &task_count);
 
     initscr();
+    curs_set(0);
     nodelay(stdscr, TRUE);
     noecho();
     getmaxyx(stdscr, scr_rows, scr_cols);
     start_color();
-    init_pair(1, COLOR_RED, COLOR_BLACK);
+    init_pair(1, COLOR_BLACK, COLOR_WHITE);
 
     int x_start = (scr_cols - task_box_width) / 2;
     int y_start = (scr_rows - task_box_height) / 2;
@@ -39,29 +40,30 @@ int main() {
     WINDOW *add_task_win = NULL;
 
     while (is_running) {
+
         switch (getch()) {
 
-        case 'a':
-            add_task_win = newwin(3, task_box_width, y_start + task_box_height, x_start);
-            add_task(add_task_win, tasks, &task_count);
-            save_tasks(tasks, task_count);
-            break;
-        case 'd':
-            delete_task(tasks, &task_count, &current_task);
-            break;
-        case 'j':
-            handle_current_task_change(&current_task, task_count, 'j');
-            break;
-        case 'k':
-            handle_current_task_change(&current_task, task_count, 'k');
-            break;
-        case ' ':
-            tasks[current_task].completed = !tasks[current_task].completed;
-            save_tasks(tasks, task_count);
-            break;
-        case 'q':
-            is_running = false;
-            break;
+            case 'a':
+                add_task_win = newwin(3, task_box_width, y_start + task_box_height, x_start);
+                add_task(add_task_win, tasks, &task_count);
+                save_tasks(tasks, task_count);
+                break;
+            case 'd':
+                delete_task(tasks, &task_count, &current_task);
+                break;
+            case 'j':
+                handle_current_task_change(&current_task, task_count, 'j');
+                break;
+            case 'k':
+                handle_current_task_change(&current_task, task_count, 'k');
+                break;
+            case ' ':
+                tasks[current_task].completed = !tasks[current_task].completed;
+                save_tasks(tasks, task_count);
+                break;
+            case 'q':
+                is_running = false;
+                break;
         }
 
         render_tasks(win, tasks, task_count, current_task);
@@ -188,8 +190,7 @@ void add_task(WINDOW *win, Task tasks[], int *task_count) {
 }
 
 void delete_task(Task tasks[], int *task_count, int *current_task) {
-    if (*task_count <= 0)
-        return;
+    if (*task_count <= 0) return;
 
     for (int i = *current_task; i < *task_count - 1; i++) {
         tasks[i] = tasks[i + 1];
