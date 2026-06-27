@@ -10,6 +10,7 @@ void render_tasks(WINDOW *window, Task task[], int task_count, int highlighted);
 void handle_current_task_change(int *current_task, int task_count, char dir);
 int save_tasks(Task tasks[], int task_count);
 int load_tasks(Task tasks[], int *task_count);
+void delete_task(Task tasks[], int *task_count, int *current_task);
 
 int main() {
   int task_count = 0;
@@ -19,7 +20,7 @@ int main() {
   int current_task = 0;
   bool is_running = true;
   char input_buffer[100];
-  char *menu_text = "[Q] quit [A] add [SPACE] toggle checkbox";
+  char *menu_text = "[Q] quit [A] add [D] delete [SPACE] toggle checkbox";
 
   Task tasks[50] = {0};
   load_tasks(tasks, &task_count);
@@ -32,7 +33,6 @@ int main() {
   init_pair(1, COLOR_RED, COLOR_BLACK);
   
   WINDOW *win = newwin(task_box_height, task_box_width, (scr_rows - task_box_height) /2, (scr_cols - task_box_width) /2);
-  box(win, 0,0);
 
   while (is_running) {
     
@@ -63,6 +63,9 @@ int main() {
         wrefresh(add_task_win);
         save_tasks(tasks,task_count);
         break;
+      case 'd':
+        delete_task(tasks, &task_count, &current_task);
+        break;
       case 'j':
         handle_current_task_change(&current_task, task_count, 'j');
         break;
@@ -81,7 +84,6 @@ int main() {
     render_tasks(win, tasks, task_count, current_task);
     wrefresh(win);
     mvprintw((scr_rows -5), (scr_cols /2) - strlen(menu_text)/2 , menu_text);
-
     napms(100);
   }
   
@@ -90,7 +92,8 @@ int main() {
 }
 
 void render_tasks(WINDOW *window, Task tasks[], int task_count, int highlighted_task) {
-
+    werase(window);
+    box(window, 0,0);
     for(int i = 0; i< task_count; i++) {
       if(i == highlighted_task) {
         wattron(window,COLOR_PAIR(1));
@@ -176,3 +179,16 @@ int load_tasks(Task tasks[], int *task_count) {
     return 1;
 }
 
+void delete_task(Task tasks[], int *task_count, int *current_task) {
+    if (*task_count <= 0) return;
+
+    for (int i = *current_task; i < *task_count - 1; i++) {
+        tasks[i] = tasks[i + 1];
+    }
+
+    (*task_count)--;
+
+    if (*current_task >= *task_count) {
+        *current_task = *task_count > 0 ? *task_count - 1 : 0;
+    }
+}
