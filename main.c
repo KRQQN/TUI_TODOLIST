@@ -42,11 +42,9 @@ int main(void) {
                     save_tasks(tasks, task_count);
                     break;
                 case 'j':
-                case KEY_DOWN:
                     handle_navigation(&current_task, task_count, 'j');
                     break;
                 case 'k':
-                case KEY_UP:
                     handle_navigation(&current_task, task_count, 'k');
                     break;
                 case ' ':
