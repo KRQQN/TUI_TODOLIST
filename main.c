@@ -60,7 +60,6 @@ int main(void) {
         }
 
         render_tasks(task_win, tasks, task_count, current_task);
-        wrefresh(task_win);
 
         mvprintw(scr_rows - 2, (scr_cols - strlen(menu_text)) / 2, "%s", menu_text);
         refresh();

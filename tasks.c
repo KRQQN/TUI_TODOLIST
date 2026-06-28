@@ -20,6 +20,8 @@ void render_tasks(WINDOW *task_win, Task tasks[], int task_count, int highlighte
     if (task_count == 0) {
         mvwprintw(task_win, TB_HEIGHT / 2, (TB_WIDTH / 2) - 15, "No tasks yet. Press 'A' to add.");
     }
+
+    wrefresh(task_win);
 }
 
 void handle_navigation(int *current_task, int task_count, int key) {
@@ -55,7 +57,9 @@ void add_task(WINDOW *task_win, Task tasks[], int *task_count) {
         (*task_count)++;
     }
 
-    delwin(input_win);
+    werase(input_win);
+    wrefresh(input_win);
+
     touchwin(task_win);
 }
 
