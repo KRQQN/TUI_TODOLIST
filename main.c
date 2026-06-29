@@ -5,10 +5,10 @@ int main(void) {
     int task_count = 0;
     int scr_rows, scr_cols;
     int current_task = 0;
+    char *text_buf;
     bool is_running = true;
-    Task tasks[MAX_TASKS] = {0};
-
-    load_tasks(tasks, &task_count);
+    const char *menu_text = "[Q]uit [A]dd [D]elete [J/K up/down] [SPACE] Toggle";
+    Task **tasks = (Task **)malloc(5 * sizeof(Task *));
 
     initscr();
     curs_set(0);
@@ -23,8 +23,7 @@ int main(void) {
     int y_start = (scr_rows - TB_HEIGHT) / 2;
 
     WINDOW *task_win = newwin(TB_HEIGHT, TB_WIDTH, y_start, x_start);
-
-    const char *menu_text = "[Q]uit [A]dd [D]elete [J/K up/down] [SPACE] Toggle";
+    tasks = load_tasks(&task_count);
 
     while (is_running) {
         int key = getch();
@@ -34,7 +33,10 @@ int main(void) {
 
             switch (key) {
                 case 'a':
-                    add_task(task_win, tasks, &task_count);
+                    text_buf = get_input(task_win);
+                    Task *task = create_task(&task_count, text_buf);
+                    tasks[task_count] = task;
+                    task_count++;
                     save_tasks(tasks, task_count);
                     break;
                 case 'd':
@@ -49,7 +51,7 @@ int main(void) {
                     break;
                 case ' ':
                     if (task_count > 0) {
-                        tasks[current_task].completed = !tasks[current_task].completed;
+                        tasks[current_task]->completed = !tasks[current_task]->completed;
                         save_tasks(tasks, task_count);
                     }
                     break;
