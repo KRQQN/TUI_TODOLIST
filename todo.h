@@ -25,5 +25,6 @@ extern Task **load_tasks(int *task_count);
 extern void delete_task(Task **tasks, int *task_count, int *current_task);
 extern char *get_input(WINDOW *task_win);
 extern Task *create_task(int *task_count, char *buf);
+extern void free_task(Task *task);
 
 #endif

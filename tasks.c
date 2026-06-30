@@ -5,6 +5,7 @@
 void render_tasks(WINDOW *task_win, Task **tasks, int task_count, int highlighted) {
     werase(task_win);
     box(task_win, 0, 0);
+
     mvwprintw(task_win, 0, 3, " Todo List [%d tasks]", task_count);
 
     for (int i = 0; i < task_count && i < TB_HEIGHT - 3; i++) {
@@ -97,5 +98,12 @@ void delete_task(Task **tasks, int *task_count, int *current_task) {
     (*task_count)--;
     if (*current_task >= *task_count) {
         *current_task = (*task_count > 0) ? *current_task - 1 : 0;
+    }
+}
+
+void free_task(Task *task) {
+    if (task) {
+        free(task->text);
+        free(task);
     }
 }

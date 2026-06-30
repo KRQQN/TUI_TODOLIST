@@ -44,15 +44,13 @@ Task *load_task(FILE *fp) {
     }
 
     if (fread(task->text, 1, text_len, fp) != text_len) {
-        free(task->text);
-        free(task);
+        free_task(task);
         return NULL;
     }
     task->text[text_len] = '\0';
 
     if (fread(&task->completed, sizeof(int), 1, fp) != 1) {
-        free(task->text);
-        free(task);
+        free_task(task);
         return NULL;
     }
 
@@ -77,7 +75,16 @@ Task **load_tasks(int *task_count) {
 
     for (int i = 0; i < *task_count; i++) {
         tasks[i] = load_task(fp);
-        // todo: on error free
+
+        if (!tasks[i]) {
+            for (int j = 0; j < i; j++) {
+                free_task(tasks[j]);
+            }
+            free(tasks);
+            fclose(fp);
+            *task_count = 0;
+            return NULL;
+        }
     }
 
     fclose(fp);

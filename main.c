@@ -8,6 +8,7 @@ int main(void) {
     char *text_buf;
     bool is_running = true;
     const char *menu_text = "[Q]uit [A]dd [D]elete [J/K up/down] [SPACE] Toggle";
+    // todo: dynamically handle tasks & update capacity
     Task **tasks = (Task **)malloc(5 * sizeof(Task *));
 
     initscr();
@@ -38,6 +39,7 @@ int main(void) {
                     tasks[task_count] = task;
                     task_count++;
                     save_tasks(tasks, task_count);
+                    free(text_buf);
                     break;
                 case 'd':
                     delete_task(tasks, &task_count, &current_task);
@@ -67,6 +69,10 @@ int main(void) {
         refresh();
 
         napms(100);
+    }
+
+    for (int i = 0; i < task_count; i++) {
+        free_task(tasks[i]);
     }
 
     delwin(task_win);
