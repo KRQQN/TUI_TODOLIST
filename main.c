@@ -9,7 +9,7 @@ int main(void) {
     bool is_running = true;
     const char *menu_text = "[Q]uit [A]dd [D]elete [J/K up/down] [SPACE] Toggle";
     // todo: dynamically handle tasks & update capacity
-    Task **tasks = (Task **)malloc(5 * sizeof(Task *));
+    Task **tasks = (Task **)malloc(20 * sizeof(Task *));
 
     initscr();
     curs_set(0);
@@ -17,14 +17,17 @@ int main(void) {
     cbreak();
     nodelay(stdscr, TRUE);
     start_color();
-    init_pair(1, COLOR_BLACK, COLOR_WHITE);
-
+    init_pair(1, COLOR_YELLOW, COLOR_BLACK);
+    init_pair(2, COLOR_GREEN, COLOR_BLACK);
     getmaxyx(stdscr, scr_rows, scr_cols);
+
     int x_start = (scr_cols - TB_WIDTH) / 2;
     int y_start = (scr_rows - TB_HEIGHT) / 2;
 
     WINDOW *task_win = newwin(TB_HEIGHT, TB_WIDTH, y_start, x_start);
+
     tasks = load_tasks(&task_count);
+    Task_list_component *task_list = create_task_list(task_win, tasks, task_count, &current_task);
 
     while (is_running) {
         int key = getch();
@@ -35,21 +38,21 @@ int main(void) {
             switch (key) {
                 case 'a':
                     text_buf = get_input(task_win);
-                    Task *task = create_task(&task_count, text_buf);
-                    tasks[task_count] = task;
-                    task_count++;
-                    save_tasks(tasks, task_count);
+                    Task *task = create_task(text_buf);
+                    tasks[task_list->task_count] = task;
+                    task_list->task_count++;
                     free(text_buf);
+                    save_tasks(tasks, task_list->task_count);
                     break;
                 case 'd':
-                    delete_task(tasks, &task_count, &current_task);
-                    save_tasks(tasks, task_count);
+                    task_list->delete_task(task_list);
+                    save_tasks(tasks, task_list->task_count);
                     break;
                 case 'j':
-                    handle_navigation(&current_task, task_count, 'j');
+                    task_list->navigate(task_list, DOWN);
                     break;
                 case 'k':
-                    handle_navigation(&current_task, task_count, 'k');
+                    task_list->navigate(task_list, UP);
                     break;
                 case ' ':
                     if (task_count > 0) {
@@ -63,11 +66,12 @@ int main(void) {
             }
         }
 
-        render_tasks(task_win, tasks, task_count, current_task);
+        task_list->render_taskss(task_list);
+        mvprintw(2, 2, "%d", task_list->task_count);
+        //  render_tasks(task_win, tasks, task_count, current_task);
 
         mvprintw(scr_rows - 2, (scr_cols - strlen(menu_text)) / 2, "%s", menu_text);
         refresh();
-
         napms(100);
     }
 

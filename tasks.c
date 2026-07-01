@@ -2,29 +2,50 @@
 #include <ctype.h>
 #include <string.h>
 
-void render_tasks(WINDOW *task_win, Task **tasks, int task_count, int highlighted) {
-    werase(task_win);
-    box(task_win, 0, 0);
-
-    mvwprintw(task_win, 0, 3, " Todo List [%d tasks]", task_count);
-
-    for (int i = 0; i < task_count && i < TB_HEIGHT - 3; i++) {
-        if (i == highlighted) {
-            wattron(task_win, COLOR_PAIR(1) | A_BOLD);
-            mvwprintw(task_win, i + 2, 2, "%s [%s]", tasks[i]->text,
-                      tasks[i]->completed ? "X" : " ");
-            wattroff(task_win, COLOR_PAIR(1) | A_BOLD);
-        } else {
-            mvwprintw(task_win, i + 2, 2, "%s [%s]", tasks[i]->text,
-                      tasks[i]->completed ? "X" : " ");
-        }
-    }
+void render_tasks(WINDOW *main_task_win, Task **tasks, int task_count, int highlighted) {
+    werase(main_task_win);
+    box(main_task_win, 0, 0);
+    mvwprintw(main_task_win, 0, 3, " Todo List [%d tasks]", task_count);
 
     if (task_count == 0) {
-        mvwprintw(task_win, TB_HEIGHT / 2, (TB_WIDTH / 2) - 15, "No tasks yet. Press 'A' to add.");
+        mvwprintw(main_task_win, TB_HEIGHT / 2 - 1, TB_WIDTH / 2 - 15,
+                  "No tasks yet. Press 'A' to add.");
+        wrefresh(main_task_win);
+        return;
     }
 
-    wrefresh(task_win);
+    int container_h = 3;
+    int max_visible = (TB_HEIGHT - 4) / container_h;
+
+    for (int i = 0; i < task_count && i < max_visible; i++) {
+        int y = 2 + (i * container_h);
+
+        WINDOW *task_cont = subwin(main_task_win, container_h, TB_WIDTH - 2,
+                                   getbegy(main_task_win) + y, getbegx(main_task_win) + 1);
+
+        if (!task_cont) continue;
+
+        werase(task_cont);
+
+        if (i == highlighted) {
+            wattron(task_cont, COLOR_PAIR(1) | A_BOLD);
+            wborder(task_cont, '|', '|', '=', '=', 'x', 'x', 'x', 'x');
+            wattroff(task_cont, COLOR_PAIR(1) | A_BOLD);
+        } else {
+            box(task_cont, 0, 0);
+        }
+
+        if (tasks[i]->completed) {
+            wbkgd(task_cont, COLOR_PAIR(2));
+        }
+
+        mvwprintw(task_cont, 1, 2, "%s", tasks[i]->text);
+        mvwprintw(task_cont, 1, TB_WIDTH - 7, "[%s]", tasks[i]->completed ? "X" : " ");
+
+        wrefresh(task_cont);
+    }
+
+    wrefresh(main_task_win);
 }
 
 void handle_navigation(int *current_task, int task_count, int key) {
@@ -74,7 +95,7 @@ char *get_input(WINDOW *task_win) {
     return buf;
 }
 
-Task *create_task(int *task_count, char *text) {
+Task *create_task(char *text) {
     Task *task = malloc(sizeof(Task *));
     if (!task) return NULL;
 
@@ -87,18 +108,6 @@ Task *create_task(int *task_count, char *text) {
     }
 
     return task;
-}
-
-void delete_task(Task **tasks, int *task_count, int *current_task) {
-    if (*task_count <= 0) return;
-
-    for (int i = *current_task; i < *task_count - 1; i++) {
-        tasks[i] = tasks[i + 1];
-    }
-    (*task_count)--;
-    if (*current_task >= *task_count) {
-        *current_task = (*task_count > 0) ? *current_task - 1 : 0;
-    }
 }
 
 void free_task(Task *task) {
